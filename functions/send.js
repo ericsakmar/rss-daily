@@ -2,12 +2,17 @@ const fetch = require("node-fetch");
 const sgMail = require("@sendgrid/mail");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-const userId = process.env.FEEDLY_USER_ID;
-const token = process.env.FEEDLY_TOKEN;
+const feedlyUserId = process.env.FEEDLY_USER_ID;
+const feedlyToken = process.env.FEEDLY_TOKEN;
+const clientToken = process.env.RSS_DAILY_CLIENT_TOKEN;
+
+const style = `
+  font-family: monospace;
+`;
 
 const getUnread = async () => {
-  const url = `https://cloud.feedly.com/v3/streams/contents?streamId=user/${userId}/category/global.all&unreadOnly=true`;
-  const res = await fetch(url, { headers: { Authorization: token } });
+  const url = `https://cloud.feedly.com/v3/streams/contents?streamId=user/${feedlyUserId}/category/global.all&unreadOnly=true`;
+  const res = await fetch(url, { headers: { Authorization: feedlyToken } });
   const full = await res.json();
   return full.items;
 };
@@ -41,13 +46,9 @@ const toHtml = (grouped) => {
     return `<div><h2>${source}</h2>${linkList}</div>`;
   });
 
-  const style = `
-    font-family: monospace;
-  `;
-
   return `
     <div style="${style}">
-      <h1>Daily RSS</h1>
+      <h1>RSS Daily!</h1>
       ${divs.join(" ")}
     </div>
   `;
@@ -58,7 +59,7 @@ const sendMail = async (html) => {
     html,
     to: "eric.sakmar+rss@gmail.com",
     from: "eric.sakmar+rss@gmail.com",
-    subject: "Daily RSS",
+    subject: "RSS Daily",
     text: "todo",
   };
 
@@ -66,13 +67,31 @@ const sendMail = async (html) => {
 };
 
 const main = async () => {
-  const articles = await getUnread();
-  const grouped = group(articles);
-  const html = toHtml(grouped);
-  await sendMail(html);
+  try {
+    const articles = await getUnread();
+    const grouped = group(articles);
+    const html = toHtml(grouped);
+    await sendMail(html);
+  } catch (e) {
+    const errorHtml = `
+      <div style="${style}">
+        <h1>RSS Daily Had a Problem!</h1>
+        <pre>${e}</pre>
+      </div>
+    `;
+    await sendMail(errorHtml);
+  }
 };
 
-exports.handler = function (_event, _context, callback) {
+exports.handler = function (event, _context, callback) {
+  if (event.headers.Authorization !== clientToken) {
+    callback(null, {
+      statusCode: 403,
+      body: "not ok",
+    });
+    return;
+  }
+
   main().then(() => {
     callback(null, {
       headers: {
