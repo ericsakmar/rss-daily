@@ -26,7 +26,9 @@ const toHtml = (grouped) => {
   const sources = Object.keys(grouped).sort();
 
   const divs = sources.map((source) => {
-    const articles = grouped[source];
+    const articles = grouped[source].sort(
+      (a, b) => parseInt(a.published, 10) - parseInt(b.published, 10)
+    );
 
     const links = articles
       .map(
