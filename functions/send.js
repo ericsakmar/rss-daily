@@ -68,4 +68,14 @@ const main = async () => {
   await sendMail(html);
 };
 
-main();
+exports.handler = function (_event, _context, callback) {
+  main().then(() => {
+    callback(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+      statusCode: 200,
+      body: "ok",
+    });
+  });
+};
