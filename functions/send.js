@@ -17,6 +17,28 @@ const getUnread = async () => {
   return full.items;
 };
 
+const markAsRead = async (articles) => {
+  const url = `https://cloud.feedly.com/v3/markers`;
+
+  const entryIds = articles.map((a) => a.id);
+
+  const body = {
+    entryIds,
+    action: "markAsRead",
+    type: "entries",
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: feedlyToken },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to mark items as read.");
+  }
+};
+
 const group = (articles) =>
   articles.reduce((acc, a) => {
     const source = a.origin.title;
@@ -72,6 +94,7 @@ const main = async () => {
     const grouped = group(articles);
     const html = toHtml(grouped);
     await sendMail(html);
+    await markAsRead(articles);
   } catch (e) {
     const errorHtml = `
       <div style="${style}">
