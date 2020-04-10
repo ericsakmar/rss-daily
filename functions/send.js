@@ -29,7 +29,9 @@ const toHtml = (grouped) => {
     const articles = grouped[source];
 
     const links = articles
-      .map((a) => `<li><a href="${a.canonicalUrl}">${a.title}</li>`)
+      .map(
+        (a) => `<li><a href="${a.canonicalUrl || a.originId}">${a.title}</li>`
+      )
       .join(" ");
 
     const linkList = `<ul>${links}</ul>`;
