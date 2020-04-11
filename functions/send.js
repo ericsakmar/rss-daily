@@ -107,7 +107,7 @@ const main = async () => {
 };
 
 exports.handler = function (event, _context, callback) {
-  if (event.headers.Authorization !== clientToken) {
+  if (event.headers.authorization !== clientToken) {
     callback(null, {
       statusCode: 403,
       body: "not ok",
